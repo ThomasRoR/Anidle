@@ -1,0 +1,2 @@
+# Anidle
+Anime daily guess
