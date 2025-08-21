@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import type { StatsState, Guess } from '../types';
+import { getTranslation } from '../translations';
 
 interface StatsModalProps {
   stats: StatsState;
   guesses: Guess[];
   isGameWon: boolean;
   onClose: () => void;
+  language: string;
 }
 
 const getNextMidnight = () => {
@@ -17,9 +19,13 @@ const getNextMidnight = () => {
   return tomorrow;
 };
 
-export const StatsModal: React.FC<StatsModalProps> = ({ stats, guesses, isGameWon, onClose }) => {
+export const StatsModal: React.FC<StatsModalProps> = ({ stats, guesses, isGameWon, onClose, language }) => {
   const [timeToNext, setTimeToNext] = useState('');
-  const [shareText, setShareText] = useState('Compartilhar 🔗');
+  const [shareText, setShareText] = useState(getTranslation(language, 'stats.shareButton'));
+
+  useEffect(() => {
+    setShareText(getTranslation(language, 'stats.shareButton'));
+  }, [language]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -39,8 +45,17 @@ export const StatsModal: React.FC<StatsModalProps> = ({ stats, guesses, isGameWo
   }, []);
 
   const winPercentage = stats.gamesPlayed > 0 ? Math.round((stats.wins / stats.gamesPlayed) * 100) : 0;
+  const hasCurrentGame = guesses.length > 0;
 
   const handleShare = () => {
+    if (!hasCurrentGame) {
+      const shareString = `Anidle - ${getTranslation(language, 'stats.title')}\n${getTranslation(language, 'stats.games')}: ${stats.gamesPlayed}\n${getTranslation(language, 'stats.winRate')}: ${winPercentage}%\n${getTranslation(language, 'stats.currentStreak')}: ${stats.currentStreak}\n${getTranslation(language, 'stats.bestStreak')}: ${stats.maxStreak}`;
+      navigator.clipboard.writeText(shareString);
+      setShareText(getTranslation(language, 'stats.copied'));
+      setTimeout(() => setShareText(getTranslation(language, 'stats.shareButton')), 2000);
+      return;
+    }
+
     let shareString = `Anidle #${new Date().getDate()} ${isGameWon ? guesses.length : 'X'}/6\n\n`;
     guesses.forEach(guess => {
       const feedbackLine = [
@@ -57,8 +72,8 @@ export const StatsModal: React.FC<StatsModalProps> = ({ stats, guesses, isGameWo
     });
 
     navigator.clipboard.writeText(shareString);
-    setShareText('Copiado!');
-    setTimeout(() => setShareText('Compartilhar 🔗'), 2000);
+    setShareText(getTranslation(language, 'stats.copied'));
+    setTimeout(() => setShareText(getTranslation(language, 'stats.shareButton')), 2000);
   };
   
   const maxDistribution = Math.max(...Object.values(stats.guessDistribution), 1);
@@ -67,23 +82,28 @@ export const StatsModal: React.FC<StatsModalProps> = ({ stats, guesses, isGameWo
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <button className="close-button" onClick={onClose}>X</button>
-        <h2>{isGameWon ? 'Fenomenal!' : 'Não foi desta vez...'}</h2>
+        
+        {hasCurrentGame ? (
+          <h2>{isGameWon ? getTranslation(language, 'gameMessages.win') : getTranslation(language, 'stats.loseMessage')}</h2>
+        ) : (
+          <h2>{getTranslation(language, 'stats.title')}</h2>
+        )}
         
         <div className="stats-summary">
-          <div><strong>{stats.gamesPlayed}</strong><p>Jogos</p></div>
-          <div><strong>{winPercentage}%</strong><p>de Vitórias</p></div>
-          <div><strong>{stats.currentStreak}</strong><p>Sequência</p></div>
-          <div><strong>{stats.maxStreak}</strong><p>Melhor Seq.</p></div>
+          <div><strong>{stats.gamesPlayed}</strong><p>{getTranslation(language, 'stats.games')}</p></div>
+          <div><strong>{winPercentage}%</strong><p>{getTranslation(language, 'stats.winRate')}</p></div>
+          <div><strong>{stats.currentStreak}</strong><p>{getTranslation(language, 'stats.currentStreak')}</p></div>
+          <div><strong>{stats.maxStreak}</strong><p>{getTranslation(language, 'stats.bestStreak')}</p></div>
         </div>
         
-        <h3>Distribuição de Tentativas</h3>
+        <h3>{getTranslation(language, 'stats.distributionTitle')}</h3>
         <div className="distribution-chart">
           {Object.entries(stats.guessDistribution).map(([attempt, count]) => (
             <div className="chart-row" key={attempt}>
             <div className="attempt-number">{attempt}</div>
             <div className="bar-container">
                 <div 
-                className={`bar ${count > 0 ? 'has-count' : ''} ${isGameWon && guesses.length === parseInt(attempt) ? 'is-winner' : ''}`}
+                className={`bar ${count > 0 ? 'has-count' : ''} ${hasCurrentGame && isGameWon && guesses.length === parseInt(attempt) ? 'is-winner' : ''}`}
                 style={{ width: `${(count / maxDistribution) * 100}%` }}
                 >
                 </div>
@@ -95,7 +115,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({ stats, guesses, isGameWo
         
         <div className="footer">
           <div className="countdown">
-            <p>Próximo Anidle em</p>
+            <p>{getTranslation(language, 'stats.nextAnidle')}</p>
             <strong>{timeToNext}</strong>
           </div>
           <button className="share-button" onClick={handleShare}>{shareText}</button>

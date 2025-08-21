@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { getTranslation } from '../translations';
 
 interface GuessInputProps {
   onGuessSubmit: (animeId: number) => void;
+  language: string;
 }
 
 interface SearchResult {
@@ -10,7 +12,7 @@ interface SearchResult {
   title: string;
 }
 
-export const GuessInput: React.FC<GuessInputProps> = ({ onGuessSubmit }) => {
+export const GuessInput: React.FC<GuessInputProps> = ({ onGuessSubmit, language }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [selectedAnime, setSelectedAnime] = useState<SearchResult | null>(null);
@@ -51,7 +53,7 @@ export const GuessInput: React.FC<GuessInputProps> = ({ onGuessSubmit }) => {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Digite o nome do anime..."
+          placeholder={getTranslation(language, 'guessInput.placeholder')}
         />
         {results.length > 0 && (
           <ul className="search-results">
@@ -63,7 +65,9 @@ export const GuessInput: React.FC<GuessInputProps> = ({ onGuessSubmit }) => {
           </ul>
         )}
       </div>
-      <button type="submit" disabled={!selectedAnime}>Chutar</button>
+      <button type="submit" disabled={!selectedAnime}>
+        {getTranslation(language, 'guessInput.submitButton')}
+      </button>
     </form>
   );
 };

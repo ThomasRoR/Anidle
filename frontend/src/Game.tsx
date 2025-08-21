@@ -6,6 +6,9 @@ import { GuessInput } from './components/GuessInput';
 import { GuessGrid } from './components/GuessGrid';
 import { ImageClue } from './components/ImageClue';
 import { StatsModal } from './components/StatsModal';
+import { LanguageSwitch } from './components/LanguageSwitch';
+import { useLanguage } from './hooks/useLanguage';
+import { getTranslation } from './translations';
 import type { GameState, StatsState, Guess } from './types';
 
 interface DailyChallenge {
@@ -23,6 +26,7 @@ const getTodayString = () => {
 }
 
 export const Game: React.FC = () => {
+  const { language, changeLanguage } = useLanguage();
   const [dailyChallenge, setDailyChallenge] = useState<DailyChallenge | null>(null);
   const [gameState, setGameState] = useState<GameState>({ date: getTodayString(), guesses: [], isGameWon: false, isGameLost: false });
   const [stats, setStats] = useState<StatsState>({ gamesPlayed: 0, wins: 0, currentStreak: 0, maxStreak: 0, guessDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 } });
@@ -54,17 +58,17 @@ export const Game: React.FC = () => {
         const response = await axios.get(`${API_BASE_URL}/daily-challenge`);
         setDailyChallenge(response.data);
       } catch (err) {
-        setError('Não foi possível carregar o desafio do dia. O backend está rodando?');
+        setError(getTranslation(language, 'gameMessages.error'));
       }
     };
     fetchDailyChallenge();
-  }, []);
+  }, [language]);
   
   const handleGuessSubmit = async (guessId: number) => {
     if (gameState.isGameWon || gameState.isGameLost) return;
     const isDuplicate = gameState.guesses.some(g => g.guessedAnimeData.id === guessId);
     if (isDuplicate) {
-      setNotification('Você já chutou este anime!');
+      setNotification(getTranslation(language, 'gameMessages.duplicateGuess'));
       setTimeout(() => setNotification(null), 3000);
       return;
     }
@@ -99,7 +103,7 @@ export const Game: React.FC = () => {
       }
 
     } catch (err) {
-      setError('Erro ao verificar o chute. Tente novamente.');
+      setError(getTranslation(language, 'gameMessages.error'));
     }
   };
 
@@ -107,27 +111,43 @@ export const Game: React.FC = () => {
   const blurLevel = Math.max(0, 16 - gameState.guesses.length * 4);
 
   if (error) return <div className="game-container error-message">{error}</div>;
-  if (!dailyChallenge) return <div className="game-container">Carregando desafio...</div>;
+  if (!dailyChallenge) return <div className="game-container">{getTranslation(language, 'gameMessages.loading')}</div>;
 
   return (
     <div className={`game-container ${gameState.isGameWon ? 'game-won' : ''}`}>
-      {showStatsModal && <StatsModal stats={stats} guesses={gameState.guesses} isGameWon={gameState.isGameWon} onClose={() => setShowStatsModal(false)} />}
+      {showStatsModal && <StatsModal stats={stats} guesses={gameState.guesses} isGameWon={gameState.isGameWon} onClose={() => setShowStatsModal(false)} language={language} />}
       
-      <h1>Anidle</h1>
-      <p>Adivinhe o anime do dia!</p>
+      <div className="header-section">
+        <h1>{getTranslation(language, 'title')}</h1>
+        <div className="header-controls">
+          <LanguageSwitch 
+            currentLanguage={language} 
+            onLanguageChange={changeLanguage} 
+          />
+          <button 
+            className="stats-button" 
+            onClick={() => setShowStatsModal(true)}
+            title={getTranslation(language, 'statsButton')}
+          >
+            📊
+          </button>
+        </div>
+      </div>
+      
+      <p>{getTranslation(language, 'subtitle')}</p>
       
       <ImageClue imageUrl={dailyChallenge.imageUrl} isRevealed={isGameOver} blurLevel={blurLevel} />
       
-      {gameState.isGameWon && <div className="win-message">Parabéns, você acertou!</div>}
-      {gameState.isGameLost && <div className="lose-message">Não foi desta vez! O anime era **{correctAnswer || '...'}**</div>}
+      {gameState.isGameWon && <div className="win-message">{getTranslation(language, 'gameMessages.win')}</div>}
+      {gameState.isGameLost && <div className="lose-message">{getTranslation(language, 'gameMessages.lose').replace('{answer}', correctAnswer || '...')}</div>}
 
       <div className="notification-container fixed-top">
         {notification && <div className="notification">{notification}</div>}
       </div>
 
-      {!isGameOver && <GuessInput onGuessSubmit={handleGuessSubmit} />}
+      {!isGameOver && <GuessInput onGuessSubmit={handleGuessSubmit} language={language} />}
       
-      <GuessGrid guesses={gameState.guesses} />
+      <GuessGrid guesses={gameState.guesses} language={language} />
     </div>
   );
 };
