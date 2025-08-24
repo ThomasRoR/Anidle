@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { getTranslation } from '../translations';
+import { API_BASE_URL } from '../config';
 
 interface GuessInputProps {
   onGuessSubmit: (animeId: number) => void;
@@ -20,7 +21,7 @@ export const GuessInput: React.FC<GuessInputProps> = ({ onGuessSubmit, language 
   useEffect(() => {
     const timerId = setTimeout(() => {
       if (query.length > 2) {
-        axios.get(`http://localhost:3001/api/search?q=${query}`)
+        axios.get(`${API_BASE_URL}/search?q=${query}`)
           .then(response => setResults(response.data))
           .catch(console.error);
       } else {

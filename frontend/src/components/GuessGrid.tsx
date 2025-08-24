@@ -1,4 +1,3 @@
-// src/components/GuessGrid.tsx
 import React from 'react';
 import type { Guess } from '../types';
 import { GuessRow } from './GuessRow';

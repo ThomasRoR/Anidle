@@ -1,7 +1,6 @@
-// frontend/src/Game.tsx
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from './config';
 import { GuessInput } from './components/GuessInput';
 import { GuessGrid } from './components/GuessGrid';
 import { ImageClue } from './components/ImageClue';
@@ -16,7 +15,6 @@ interface DailyChallenge {
   imageUrl: string;
 }
 
-const API_BASE_URL = 'http://localhost:3001/api';
 const MAX_GUESSES = 6;
 
 const getTodayString = () => {
